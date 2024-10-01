@@ -9,8 +9,8 @@
   --text-color-question: #b5b2bc;
   --text-color-disavled: #6f6d78;
   --color-primary: #663399;
-  --color-secondary: #e070d7;
-  --color-third: #78e9de;
+  --color-secondary: #c050b7;
+  --color-third: #4eaca2;
 }
 
 *{
@@ -146,7 +146,7 @@ details button{
 }
 
 .box-input button{
-    width: 140px;
+    width: 170px;
     margin-left: auto;
     padding: 8px;
     border: 1px solid var(--border-primary);
