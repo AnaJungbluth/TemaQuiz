@@ -6,3 +6,6 @@
 * CSS
 * React
 * IA
+
+## Criar uma chave no site da OpenAI
+Substituir no arquivo openai.ts --> 'chave-openAI'
