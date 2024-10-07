@@ -1,9 +1,11 @@
-type ItemSuggestionProps = {
+import { ComponentProps } from "react"
+
+type ItemSuggestionProps = ComponentProps<'button'> &{
     name: string
 }
 
-export function ItemSuggestion({name}: ItemSuggestionProps){
+export function ItemSuggestion({name, ...props}: ItemSuggestionProps){
     return(
-        <button>{name}</button>
+        <button {...props}>{name}</button>
     )
 }

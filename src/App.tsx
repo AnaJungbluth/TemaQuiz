@@ -1,6 +1,9 @@
 import { useState } from 'react'
 import './assets/question.png'
 import { ItemSuggestion } from './components/ItemSuggestion'
+import { getHistoric, setHistoric } from './storage/historic'
+import { sendMessage } from './api/openai'
+import { ThreeDots } from 'react-loader-spinner'
 // pending -> started -> done
 // pending -> esperando fazer pergunta
 // started -> começo o chat
@@ -8,12 +11,19 @@ import { ItemSuggestion } from './components/ItemSuggestion'
 
 type ProgressType = 'pending' | 'started' | 'done'
 
+type Message ={
+  role: 'user' | 'assistant'
+  content: string
+  subject?: string
+}
+
 function App() {
   const [progress, setProgress] = useState<ProgressType>('pending')
   const [textarea, setTextarea] = useState<string>('')
-  const [chat, setChat] = useState<string[]>([])
+  const [chat, setChat] = useState<Message[]>([])
+  const [loading, setLoading] = useState<boolean>(false)
 
-  function handleSubmitChat(){
+  async function handleSubmitChat(){
     if(!textarea){
       return
     }
@@ -22,16 +32,50 @@ function App() {
     setTextarea('') 
 
     if(progress === 'pending'){
-      setChat(text => [...text, textTextearea])
-      setChat(text => [...text, 'pergunta gerada'])
-
+      setHistoric(textTextearea)
       setProgress('started')
+
+      const prompt = `gere uma pergunta onde simule uma entrevista de
+      emprego sobre ${textTextearea}, após gerar a pergunta, enviarei a resposta e 
+      você  me dará um feedback.
+      O feedback precisa ser simples e objetvo e corresponder fielmente
+      a resposta enviada.
+      Após o feedback não existirá mais interação.`
+
+      const messageGPT: Message = {
+        role: 'user',
+        content: prompt,
+        subject: textTextearea
+      }
+      setChat(text => [...text, messageGPT])
+
+      setLoading(true)
+      // Chamando a API da OpenAI
+      const questionGPT = await sendMessage([messageGPT])
+      setChat(text => [...text, {
+        role: 'assistant',
+        content: questionGPT.content
+      }])
+
+      setLoading(false)
       return
     }
 
-    setChat(text => [...text, textTextearea])
-    setChat(text => [...text, 'feedback gerado'])
+    const resonseUser: Message ={
+      role: 'user',
+      content: textTextearea
+    }
+    setChat(text => [...text, resonseUser])
 
+    setLoading(true)
+    // Chamando a API da OpenAI
+    const feedbackGPT = await sendMessage([...chat, resonseUser])
+    setChat(text => [...text, {
+      role: 'assistant',
+      content: feedbackGPT.content
+    }])
+
+    setLoading(false)
     setProgress('done')
   }
 
@@ -45,16 +89,20 @@ function App() {
       <div className="sidebar">
         <details className="suggestion" open>
           <summary className="gradient-background">Tópicos Sugeridos</summary>
-          <ItemSuggestion name='JavaScript' />
-          <ItemSuggestion name='React' />
-          <ItemSuggestion name='Python' />
-          <ItemSuggestion name='Django' />
+          <ItemSuggestion name='JavaScript' onClick={() => setTextarea('JavaScript')}/>
+          <ItemSuggestion name='React' onClick={() => setTextarea('React')}/>
+          <ItemSuggestion name='Python' onClick={() => setTextarea('Python')}/>
+          <ItemSuggestion name='Django' onClick={() => setTextarea('Django')}/>
         </details>
 
         <details className="historic" open>
           <summary>Histórico</summary>
-          <ItemSuggestion name='Python' />
-          <ItemSuggestion name='Django' />
+          {
+            getHistoric().map(item => (
+              <ItemSuggestion  name={item} onClick={() => setTextarea(item)}/>
+            ))
+          }
+          
         </details>
       </div>
 
@@ -78,7 +126,7 @@ function App() {
             <div className="box-chat">
               {
                 chat[0] &&(
-                  <h1>Você esta estudando sobre <span className="gradient-color">{chat[0]}</span></h1>
+                  <h1>Você esta estudando sobre <span className="gradient-color">{chat[0].subject}</span></h1>
                 )
               }
 
@@ -86,7 +134,7 @@ function App() {
                 chat[1] &&(
                   <div className="box-question">
                     <h2><img src="./assets/question.png"></img>Pergunta</h2>
-                    {chat[1]}
+                    {chat[1].content}
                   </div>
                 )
               }
@@ -95,7 +143,7 @@ function App() {
                 chat[2] &&(
                   <div className="box-answer">
                     <h2>Sua resposta</h2>
-                    {chat[2]}
+                    {chat[2].content}
                   </div>
                 )
               }
@@ -104,7 +152,7 @@ function App() {
                 chat[3] &&(
                   <div className="box-feedback">
                     <h2>Feedback <span className="gradient-color">TemaQuiz</span></h2>
-                    {chat[3]}
+                    {chat[3].content}
                     <div className="action">
                       <button 
                         className="gradient-background"
@@ -112,6 +160,20 @@ function App() {
                       >Novo tópico</button>
                     </div>
                   </div>
+                )
+              }
+
+              {
+                loading &&(
+                  <ThreeDots
+                    visible={true}
+                    height="30"
+                    width="60"
+                    color="#663399"
+                    radius="9"
+                    ariaLabel='three-dots-loading'
+                    wrapperStyle={{margin: '30px auto'}}
+                  />
                 )
               }
 
