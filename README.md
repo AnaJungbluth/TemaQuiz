@@ -4,6 +4,7 @@
 ## Tecnologias utilizadas
 * HTML
 * CSS
+* TypeScript
 * React
 * IA
 
